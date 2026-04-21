@@ -1,0 +1,40 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            echo "🚀 Deploying application..."
+
+            cd ~/myDevops || {
+              git clone git@github.com:aliraza4u91-svg/myDevops.git
+              cd myDevops
+            }
+
+            git pull origin main
+
+            docker-compose down --remove-orphans
+            docker-compose up -d --build
+
+            sleep 10
+
+            echo "🔍 Health check..."
+            curl -f http://localhost:5000/health
+
+            echo "✅ Deployment successful"
